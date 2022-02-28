@@ -54,7 +54,7 @@ class StudioBook(dict):
             if full.startswith(pres):
                 pattern = f'({"|".join(pres)})' r'(?P<abbr>\w{,3})'
                 abbr = re.compile(pattern).match(full).group('abbr')
-            studio['abbr'] = abbr
+            studio['abbr'] = abbr.upper()
         return self
 
     def fetch(self, api):
