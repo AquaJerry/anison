@@ -1,4 +1,5 @@
 #!/bin/python3
+from pathlib import Path
 import json
 import os
 import re
@@ -6,36 +7,39 @@ import time
 
 
 class Angel:
-    '''Fetcher
-    '''
+    '''Fetcher'''
 
     def __init__(self, api_head):
         self.api_head = api_head
         self.last_fetch_time = time.time()  # Obey API rate limit
 
-    def fetch_by_api(self, api):
-        '''Help you write less to fetch things from animethemes.moe.'''
+    def rawfetch(self, api):
+        '''Help you write less to fetch things from animethemes.moe'''
         self.ready()
         return json.loads(os.popen(f"curl -g '{api}'").read())
 
-    def fetch_by_api_body(self, api_body):
-        '''Help you write less to fetch things from animethemes.moe.'''
-        return self.fetch_by_api(self.api_head + api_body)
+    def fetch(self, api_body):
+        '''Help you write less to fetch things from animethemes.moe'''
+        return self.rawfetch(self.api_head + api_body)
 
     def pull(self, link, name):
+        '''Download link as name.mp3'''
         self.ready()
         os.system(f'ffmpeg -i {link} -af loudnorm -b:a 64k'
                   f' -map_chapters -1 -map_metadata -1 {name}.mp3')
 
     def ready(self):
+        '''Most websites keep a rate limit of 60 per minute'''
         if 1 > time.time() - self.last_fetch_time:
             time.sleep(1)
         self.last_fetch_time = time.time()
 
 
 class DAngel(Angel):
-    def fetch_by_api(self, api):
-        return super().fetch_by_api(api)['data']
+    '''Fetcher: what is fetch has a 'data' field'''
+
+    def fetch(self, api):
+        return super().fetch(api)['data']
 
 
 class StudioBook(dict):
@@ -46,40 +50,42 @@ class StudioBook(dict):
         '''Get a dict of companies who make animes
         '''
         self.angel = angel
-        fname = 'studio_book.json'
-        try:
-            with open(fname) as f:
+        book = Path('studio_book.json')
+        if book.exists():
+            with book.open() as f:
                 for k, v in json.load(f).items():
                     self[k] = v
-        except:
-            with open(fname, 'w') as f:
-                # Save disk usage by sep
-                api = angel.api_head + 'studio?fields[studio]=id,slug'
-                json.dump(self.fetch(api).abbreviate(), f)
+        else:
+            newbook = self.fetch('studio?fields[studio]=id,slug').abbr()
+            with book.open('w') as f:
+                json.dump(newbook, f)
 
-    def abbreviate(self):
+    def abbr(self):
         '''Short names are better on wearables
         '''
         pres = 'animation', 'production', 'project', 'studio', 'team', 'tokyo'
         for studio in self.values():
-            full = studio['slug'].replace('_', '')
+            full = studio['slug'].replace('_', '')  # abbr is alnum
             abbr = full[:3]
             if full.startswith(pres):
                 pattern = f'({"|".join(pres)})' r'(?P<abbr>\w{,3})'
                 abbr = re.compile(pattern).match(full).group('abbr')
-            studio['abbr'] = abbr.upper()
+            studio['abbr'] = abbr.upper()   # upper is more readable
         return self
 
-    def fetch(self, api):
+    def rawfetch(self, api):
         '''Fetch info about anime companies page by page.
         This will fetch all companies online.
         '''
-        page = self.angel.fetch_by_api(api)
+        page = self.angel.rawfetch(api)
         for studio in page['studios']:
             self[studio['id']] = {'slug': studio['slug']}
         if next := page['links']['next']:
-            self.fetch(next)
+            self.rawfetch(next)
         return self
+
+    def fetch(self, api_body):
+        return self.rawfetch(self.angel.api_head + api_body)
 
 
 class StudioAngel:
@@ -88,9 +94,8 @@ class StudioAngel:
 
 
 def test_animethemes():
-    # Test script here
-    # From which get anime songs
-    year = 1963
+    '''animethemes.moe stream is disabled, so audios will be pull elsewhere'''
+    year = 1963   # when first anime is on air
     # Use this to get animes on air in some year
     year_show_param = '?' + '&'.join([
         'fields[anime]=name',  # See TODO_1
@@ -100,7 +105,7 @@ def test_animethemes():
         'include=animethemes.song,studios',  # See TODO_1
     ])
     animeyear_api_body = f'animeyear/{year}{year_show_param}'
-    moe = StudioAngel.angel.fetch_by_api_body(animeyear_api_body)
+    moe = StudioAngel.angel.fetch(animeyear_api_body)
     for season, animes in moe.items():
         quarter = {'winter': 1, 'spring': 2, 'summer': 3, 'fall': 4}[season]
         for anime in animes:
@@ -111,18 +116,70 @@ def test_animethemes():
                 # TODO TODO_1: pull audio from other sites
 
 
+class SongAngel:
+    '''Yes, I can download anime songs'''
+
+    def __init__(self):
+        self.angle = DAngel('https://api.aniapi.com/v1/')
+
+    def pull_songs(self, year, page=1):
+
+        # Step 1: fetch all songs
+        api_body = f'song?year={year}'
+        if 1 - page:
+            api_body += '&page={page}'
+        print(api_body)  # FIXME
+        songbook = self.angle.fetch(api_body)
+
+        # Step 2: get song list
+        try:
+            songs = songbook['documents']
+        except:  # no songs this year
+            return
+
+        # Step 3: download each song
+        for song in songs:
+
+            # Step 3-1: get download link
+            try:
+                link = song['preview_url']
+            except:  # some songs have no preview
+                continue
+
+            # Step 3-2: OP? ED?
+            if song['type'] not in (0, 1):   # if the song is neither OP or ED
+                continue
+            # FIXME: this sluglikeOP1 do not like OP1 but OP#999
+            sluglikeOP1 = ('OP', 'ED')[song['type']] + '#' + str(song['id'])
+
+            # Step 3-3: season
+            # {WINTER: 0, SPRING: 1, SUMMER: 2, FALL: 3}
+            quar = f"Q{1 + s}" if (s := song['season']) in (0, 1, 2, 3) else ''
+
+            # Step 3-4: studios
+            studios = song['anime_id']  # TODO: replace anime_id with studios
+
+            # Step 3-5: name of file to download?
+            name = f"{year}{quar},{studios},{sluglikeOP1}"
+            # sluglikeOP1 like OP but not OP1, so
+            samename_paths = [*Path().glob(f'{name}*')]
+            if num_samename := len(samename_paths):  # FIXME
+                # product code:
+                #name += 1 + num_samename
+                # if 1 == num_samename:
+                #    muji_path = samename_paths[0]
+                #    muji_path.rename(muji_path.stem + '1' + muji_path.suffix)
+                continue
+
+            # Step 3-6: download
+            self.angle.pull(link, name)
+
+        # Step 4: turn to next page if any
+        if page - songbook['last_page']:
+            self.pull_songs(year, 1 + page)
+
+
 if '__main__' == __name__:
-    # TODO: studio
-    a_angle = DAngel('https://api.aniapi.com/v1/')
-    year = 1968
-    allsongs = a_angle.fetch_by_api_body(f'song?year={year}')
-    # Get songs which type is OP(0) or ED(1) and season is known
-    songs = [s for s in allsongs['documents']
-             if s['type'] in (0, 1) and s['season'] in (0, 1, 2, 3)]
-    for song in songs:
-        # Season {WINTER: 0, SPRING: 1, SUMMER: 2, FALL: 3} to quarter
-        quarter = f"Q{1 + song['season']}"
-        sluglikeOP1 = ('OP', 'ED')[song['type']]
-        name = f"{year}{quarter},{song['anime_id']},{sluglikeOP1}"
-        a_angle.pull(song['preview_url'], name)
-    pass
+    song_angle = SongAngel()
+    for year in range(1963, 2022):
+        song_angle.pull_songs(year)
