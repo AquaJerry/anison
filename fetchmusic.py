@@ -127,7 +127,7 @@ class SongAngel:
         # Step 1: fetch all songs
         api_body = f'song?year={year}'
         if 1 - page:
-            api_body += '&page={page}'
+            api_body += f'&page={page}'
         print(api_body)  # FIXME
         songbook = self.angle.fetch(api_body)
 
