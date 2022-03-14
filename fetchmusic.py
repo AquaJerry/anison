@@ -107,7 +107,7 @@ class StudioBook(dict):
 class AnimeSeason:
     Season = 'Winter', 'Spring', 'Summer', 'Fall'
 
-    def __getattr__(self, name)
+    def __getattr__(self, name):
         if 'season' == name:
             return self.Season[quarter]
 
