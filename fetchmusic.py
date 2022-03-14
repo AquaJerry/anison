@@ -109,7 +109,7 @@ class AnimeSeason:
 
     def __getattr__(self, name):
         if 'season' == name:
-            return self.Season[quarter]
+            return self.Season[self.quarter]
 
     def __init__(self, year = 1963, quarter = 0):
         '''The first anime is on air in 1963'''
