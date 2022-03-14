@@ -107,27 +107,30 @@ class StudioBook(dict):
 class AnimeSeason:
     Season = 'Winter', 'Spring', 'Summer', 'Fall'
 
+    def __getattr__(self, name)
+        if 'season' == name:
+            return self.Season[quarter]
+
     def __init__(self, year = 1963, quarter = 0):
         '''The first anime is on air in 1963'''
         self.quarter = quarter
-        self.season = AnimeSeason.Season[quarter]
         self.year = year
     
     def __iter__(self):
         return self
 
-    def __repr__(self):
-        return f'{str(self.year)[-2:]}{1 + self.quarter}'
-    
     def __next__(self):
         self.quarter += 1
-        if len(AnimeSeason.Season) == self.quarter:
+        if len(self.Season) == self.quarter:
             self.quarter = 0
             self.year += 1
             if datetime.date.today().year < self.year:
                 raise StopIteration
         return self
 
+    def __repr__(self):
+        return f'{str(self.year)[-2:]}{1 + self.quarter}'
+    
 
 class AnimeAngel:
     def __init__(self):
@@ -135,8 +138,6 @@ class AnimeAngel:
         self.book = StudioBook(self.angel)
 
     def clone_songs(self, since = AnimeSeason()):
-        if type(since) is not AnimeSeason:
-            since = AnimeSeason(since)
         for season in since:
             self.pull_songs_in(season)
 
