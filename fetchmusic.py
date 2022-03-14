@@ -38,7 +38,7 @@ class Angel:
                   f'rm a.webm;')
         if 1 < (slen := len(sames := [*pathlib.Path().glob(f'{name}*')])):
             # solve name conflicts
-            mds = (hashlib.md5(s.read_bytes()).hexdigest() for s in sames)
+            mds = [hashlib.md5(s.read_bytes()).hexdigest() for s in sames]
             for i in range(2):  # conflict rate: 1/256
                 if len({m[:1+i] for m in mds}) == slen:
                     for i, s in enumerate(sames):
