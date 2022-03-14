@@ -134,7 +134,7 @@ class AnimeAngel:
         self.book = StudioBook(self.angel)
 
     def clone_songs(self, since = AnimeSeason()):
-        if since is not AnimeSeason:
+        if type(since) is not AnimeSeason:
             since = AnimeSeason(since)
         for season in since:
             self.pull_songs_in(season)
