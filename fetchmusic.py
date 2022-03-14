@@ -42,7 +42,7 @@ class Angel:
             for i in range(2):  # conflict rate: 1/256
                 if len({m[:1+i] for m in mds}) == slen:
                     for i, s in enumerate(sames):
-                        s.rename(f'{name}{mds[i]}{suffix}')
+                        s.rename(f'{name}{mds[i][:1+i]}{suffix}')
             else:
                 pathlib.Path(tmp_out_path).unlink()  # remove
         else:
