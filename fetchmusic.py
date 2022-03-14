@@ -43,6 +43,7 @@ class Angel:
                 if len({m[:1+i] for m in mds}) == slen:
                     for j, s in enumerate(sames):
                         s.rename(f'{name}{mds[j][:1+i]}{suffix}')
+                    break
             else:
                 pathlib.Path(tmp_out_path).unlink()  # remove
         else:
