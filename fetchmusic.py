@@ -30,12 +30,18 @@ class Angel:
     def pull(self, link, name):
         '''Download link as name.mp3'''
         suffix = '.mp3'
+        tmp_in_path = 'a.webm'
         tmp_out_path = f'{name}z{suffix}'
         self.ready()
-        os.system(f'curl -k {link} -o a.webm;'
-                  f'ffmpeg -i a.webm -af loudnorm -b:a 64k'
-                  f' -map_chapters -1 -map_metadata -1 -y {tmp_out_path};'
-                  f'rm a.webm;')
+        incomplete = os.system(
+            f'curl {link} -o {tmp_in_path} &&'
+            f'ffmpeg -i {tmp_in_path} -af loudnorm -b:a 64k'
+            f' -map_chapters -1 -map_metadata -1 {tmp_out_path}'
+        )
+        pathlib.Path(tmp_in_path).unlink()
+        if incomplete:
+            pathlib.Path(tmp_out_path).unlink()  # remove
+            return
         if 1 < (slen := len(sames := [*pathlib.Path().glob(f'{name}*')])):
             # solve name conflicts
             mds = [hashlib.md5(s.read_bytes()).hexdigest() for s in sames]
@@ -111,11 +117,11 @@ class AnimeSeason:
         if 'season' == name:
             return self.Season[self.quarter]
 
-    def __init__(self, year = 1963, quarter = 0):
+    def __init__(self, year=1963, quarter=0):
         '''The first anime is on air in 1963'''
         self.quarter = quarter
         self.year = year
-    
+
     def __iter__(self):
         return self
 
@@ -130,14 +136,14 @@ class AnimeSeason:
 
     def __repr__(self):
         return f'{str(self.year)[-2:]}{1 + self.quarter}'
-    
+
 
 class AnimeAngel:
     def __init__(self):
         self.angel = Angel('https://staging.animethemes.moe/api/')
         self.book = StudioBook(self.angel)
 
-    def clone_songs(self, since = AnimeSeason()):
+    def clone_songs(self, since=AnimeSeason()):
         for season in since:
             self.pull_songs_in(season)
 
