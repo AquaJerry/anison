@@ -31,15 +31,13 @@ class Angel:
     def pull(self, link, name):
         '''Download link as name.mp3'''
         suffix = '.mp3'
-        tmp_in_path = 'a.webm'
         tmp_out_path = f'{name}z{suffix}'
         self.ready()
         incomplete = os.system(
-            f'curl {link} -o {tmp_in_path} &&'
-            f'ffmpeg -i {tmp_in_path} -af loudnorm -b:a 64k'
+            f'curl {link} | '
+            f'ffmpeg -i - -af loudnorm -b:a 64k'
             f' -map_chapters -1 -map_metadata -1 {tmp_out_path}'
         )
-        os.system(f'rm {tmp_in_path}')
         if incomplete:
             os.system(f'rm {tmp_out_path}')
             return
