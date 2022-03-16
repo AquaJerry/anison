@@ -5,6 +5,7 @@ import json
 import os
 import pathlib
 import re
+import sys
 import time
 
 
@@ -117,22 +118,22 @@ class AnimeSeason:
         if 'season' == name:
             return self.Season[self.quarter]
 
-    def __init__(self, year=1963, quarter=0):
-        '''The first anime is on air in 1963'''
-        self.quarter = quarter
-        self.year = year
+    def __init__(self, season = 0):
+        '''The first anime is on air in 1st quarter in 1963'''
+        if not re.compile(r'\d\d[1-4]').match(season or ''):
+            season = '631'
+        self.quarter = int(season[2]) - 1
+        self.year = (y := int(season[:2])) + (1900, 2000)[63 > y]
 
     def __iter__(self):
-        return self
-
-    def __next__(self):
-        self.quarter += 1
-        if len(self.Season) == self.quarter:
-            self.quarter = 0
-            self.year += 1
-            if datetime.date.today().year < self.year:
-                raise StopIteration
-        return self
+        while 1:
+            yield self
+            self.quarter += 1
+            if len(self.Season) == self.quarter:
+                self.quarter = 0
+                self.year += 1
+                if datetime.date.today().year < self.year:
+                    break
 
     def __repr__(self):
         return f'{str(self.year)[-2:]}{1 + self.quarter}'
@@ -143,7 +144,9 @@ class AnimeAngel:
         self.angel = Angel('https://staging.animethemes.moe/api/')
         self.book = StudioBook(self.angel)
 
-    def clone_songs(self, since=AnimeSeason()):
+    def clone_songs(self, since=0):
+        if type(since) is not AnimeSeason:
+            since = AnimeSeason(since)
         for season in since:
             self.pull_songs_in(season)
 
@@ -196,4 +199,4 @@ class AnimeAngel:
 
 
 if '__main__' == __name__:
-    AnimeAngel().clone_songs()
+    AnimeAngel().clone_songs(sys.argv[1] if 1 - len(sys.argv) else 0)
