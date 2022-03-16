@@ -38,9 +38,9 @@ class Angel:
             f'ffmpeg -i {tmp_in_path} -af loudnorm -b:a 64k'
             f' -map_chapters -1 -map_metadata -1 {tmp_out_path}'
         )
-        pathlib.Path(tmp_in_path).unlink()
+        os.system(f'rm {tmp_in_path}')
         if incomplete:
-            pathlib.Path(tmp_out_path).unlink()  # remove
+            os.system(f'rm {tmp_out_path}')
             return
         if 1 < (slen := len(sames := [*pathlib.Path().glob(f'{name}*')])):
             # solve name conflicts
