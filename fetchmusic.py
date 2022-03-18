@@ -1,9 +1,7 @@
 #!/bin/python3
 import argparse
-import hashlib
 import json
 import os
-import pathlib
 import re
 import time
 
@@ -18,9 +16,9 @@ class Angel:
         Angel.ready()
         return json.loads(os.popen(f"curl -g '{api}'").read())
 
-    def pull(link, name, not_overwrite):
+    def pull(link, name, skip):
         '''Download link as name.mp3'''
-        if (sames := [*pathlib.Path().glob(f'{name}*')]) and not_overwrite:
+        if (sames := os.popen(f'ls {name}[!0-9]*').read().split()) and skip:
             return
         Angel.ready()
         if os.system(f'curl {link}|ffmpeg -i - -af loudnorm -b:a 64k'
@@ -28,12 +26,13 @@ class Angel:
             return  # download incomplete
         if sames:
             # solve name conflicts
-            sames += [pathlib.Path(f'/tmp/{name}')]
-            mds = [hashlib.md5(s.read_bytes()).hexdigest() for s in sames]
+            sames += [f'/tmp/{name}']
+            mds = [''.join(chr(55+ord(c)) if c.isdigit() else c for c in
+                           os.popen(f'md5sum {s}').read()) for s in sames]
             for i in range(2):  # conflict rate: 1/256
                 if len(sames) == len({m[:1+i] for m in mds}):
                     for j, s in enumerate(sames):
-                        s.rename(f'{name}{mds[j][:1+i]}.mp3')
+                        os.system(f'mv {s} {name}{mds[j][:1+i]}.mp3')
                     break
         else:
             os.system(f'mv /tmp/{name} {name}.mp3')  # save
@@ -51,15 +50,14 @@ class StudioBook(dict):
     def __init__(self):
         '''Get a dict of companies who make animes
         '''
-        book = pathlib.Path('studio_book.json')
-        if book.exists():
-            with book.open() as f:
+        if os.system('[ -s studio_book.json ]'):  # if the book does not exist
+            api = 'studio?fields[studio]=id,slug'
+            with open('studio_book.json', 'w') as f:
+                json.dump(self.pull(Angel.api_head + api).abbr(), f)
+        else:
+            with open('studio_book.json') as f:
                 for k, v in json.load(f).items():
                     self[k] = v
-        else:
-            api = Angel.api_head + 'studio?fields[studio]=id,slug'
-            with book.open('w') as f:
-                json.dump(self.pull(api).abbr(), f)
 
     def abbr(self):
         '''Short names are better on wearables
@@ -82,7 +80,7 @@ class StudioBook(dict):
         '''
         page = Angel.fetch(api)
         for studio in page['studios']:
-            self[studio['id']] = {'slug': studio['slug']}
+            self[str(studio['id'])] = {'slug': studio['slug']}
         if next := page['links']['next']:
             self.pull(next)
         return self
@@ -117,8 +115,8 @@ class AnimeSeason:
 class AnimeAngel:
     book = StudioBook()
 
-    def clone_songs(self, since='', not_overwrite=0):
-        self.not_overwrite = not_overwrite
+    def clone_songs(self, since='', skip=0):
+        self.skip = skip
         for when in AnimeSeason(since):
             '''pull anime songs from animethemes.moe'''
             # Use this to get animes on air in some year
@@ -151,24 +149,21 @@ class AnimeAngel:
 
     def rawpull(self, api):
         moe = Angel.fetch(api)
-        for anime in moe['anime']:
-            studiostr = ''.join(self.book[str(s['id'])]['abbr']
-                                for s in anime['studios'])
-            for animetheme in anime['animethemes']:
-                slug = (s := animetheme['slug'])[0] + s[2:]
-                videos = animetheme['animethemeentries'][0]['videos']
-                def key(video): return video['size']
-                filename = sorted(videos, key=key)[0]['filename']
-                link = f'https://animethemes.moe/video/{filename}.webm'
-                name = f'{self.when}{studiostr}{slug}'
-                Angel.pull(link, name, self.not_overwrite)
+        for a in moe['anime']:
+            s = ''.join(self.book[str(s['id'])]['abbr'] for s in a['studios'])
+            for t in a['animethemes']:
+                e = ''.join(re.compile('(.).(\d*)').match(t['slug']).groups())
+                v = t['animethemeentries'][0]['videos']
+                f = sorted(v, key=lambda v: v['size'])[0]['filename']
+                link = f'https://animethemes.moe/video/{f}.webm'
+                Angel.pull(link, f'{self.when}{s}{e}', self.skip)
         if next := moe['links']['next']:
             self.rawpull(next)
 
 
 if '__main__' == __name__:
     parser = argparse.ArgumentParser()
-    parser.add_argument('since', default='', nargs='?')
     parser.add_argument('-n', action='store_true')
+    parser.add_argument('since', default='', nargs='?')
     arg = parser.parse_args()
     AnimeAngel().clone_songs(arg.since, arg.n)
