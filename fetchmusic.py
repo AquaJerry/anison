@@ -18,7 +18,13 @@ class Angel:
 
     def pull(link, name, skip):
         '''Download link as name.mp3'''
-        if (sames := os.popen(f'ls {name}[!0-9]*').read().split()) and skip:
+        # If skip, list local songs to try reduce download times
+        # > name = '631MUSO'
+        # > ls $name[.a-z]*
+        # 631MUSO.mp3
+        # 631MUSOa.mp3
+        #        ^ The dot(.) and lowercase means no need to download
+        if (sames := os.popen(f'ls {name}[.a-z]*').read().split()) and skip:
             return
         Angel.ready()
         if os.system(f'curl {link}|ffmpeg -i - -af loudnorm -b:a 64k'
