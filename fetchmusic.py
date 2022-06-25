@@ -161,7 +161,7 @@ class AnimeAngel:
                 e = ''.join(re.compile('(.).(\d*)').match(t['slug']).groups())
                 v = t['animethemeentries'][0]['videos']
                 f = sorted(v, key=lambda v: v['size'])[0]['filename']
-                link = f'https://animethemes.moe/video/{f}.webm'
+                link = f'https://v.animethemes.moe/{f}.webm'
                 Angel.pull(link, f'{self.when}{s}{e}', self.skip)
         if next := moe['links']['next']:
             self.rawpull(next)
