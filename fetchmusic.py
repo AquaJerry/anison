@@ -8,7 +8,7 @@ import time
 
 class Angel:
     '''Fetcher'''
-    api_head = 'https://staging.animethemes.moe/api/'
+    api_head = 'https://api.animethemes.moe/'
     last_fetch_time = time.time()  # Obey API rate limit
 
     def fetch(api):
