@@ -159,7 +159,7 @@ class AnimeAngel:
             s = ''.join(self.book[str(s['id'])]['abbr'] for s in a['studios'])
             for t in a['animethemes']:
                 e = ''.join(re.compile('(.).(\d*)').match(t['slug']).groups())
-                v = t['animethemeentries'][0]['videos']
+                v = [v for e in t['animethemeentries'] for v in e['videos']]
                 f = sorted(v, key=lambda v: v['size'])[0]['filename']
                 link = f'https://v.animethemes.moe/{f}.webm'
                 Angel.pull(link, f'{self.when}{s}{e}', self.skip)
