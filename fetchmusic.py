@@ -68,7 +68,7 @@ class StudioBook(dict):
     def abbr(self):
         '''Short names are better on wearables
         '''
-        pres = 'animation', 'production', 'project', 'studio', 'team', 'tokyo'
+        pres = 'production', 'studio'
         for studio in self.values():
             full = studio['slug'].replace('_', '')  # abbr is alnum
             abbr = full[:3]
