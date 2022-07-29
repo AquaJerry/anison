@@ -142,6 +142,20 @@ class AnimeAngel:
                     'year': when.year,
                 },
             })
+            .clone_songs_pull()
+
+    def clone_songs_pull(self):
+        for a in self.moe['anime']:
+            s = ''.join(self.book[str(s['id'])]['abbr'] for s in a['studios'])
+            for t in a['animethemes']:
+                e = ''.join(re.compile('(.).(\d*)').match(t['slug']).groups())
+                v = [v for e in t['animethemeentries'] for v in e['videos']]
+                f = sorted(v, key=lambda v: v['size'])[0]['filename']
+                link = f'https://v.animethemes.moe/{f}.webm'
+                Angel.pull(link, f'{self.when}{s}{e}', self.skip)
+        if next := self.moe['links']['next']:
+            self.moe = Angel.fetch(next)
+            self.clone_songs_pull()
 
     def pull(self, endpoint, config={}):
         params = []
@@ -150,21 +164,9 @@ class AnimeAngel:
                 params += [f'{k}={v}']
             else:
                 params += [f'{k}[{s}]={w}' for s, w in v.items()]
-        self.rawpull(f'{Angel.api_head}{endpoint}'
+        self.moe = Angel.fetch(f'{Angel.api_head}{endpoint}'
                      f"{'?' if params else ''}{'&'.join(params)}")
-
-    def rawpull(self, api):
-        moe = Angel.fetch(api)
-        for a in moe['anime']:
-            s = ''.join(self.book[str(s['id'])]['abbr'] for s in a['studios'])
-            for t in a['animethemes']:
-                e = ''.join(re.compile('(.).(\d*)').match(t['slug']).groups())
-                v = [v for e in t['animethemeentries'] for v in e['videos']]
-                f = sorted(v, key=lambda v: v['size'])[0]['filename']
-                link = f'https://v.animethemes.moe/{f}.webm'
-                Angel.pull(link, f'{self.when}{s}{e}', self.skip)
-        if next := moe['links']['next']:
-            self.rawpull(next)
+        return self
 
 
 if '__main__' == __name__:
