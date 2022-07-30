@@ -141,8 +141,7 @@ class AnimeAngel:
                     'season': when.season,
                     'year': when.year,
                 },
-            })
-            .clone_songs_pull()
+            }).clone_songs_pull()
 
     def clone_songs_pull(self):
         for a in self.moe['anime']:
