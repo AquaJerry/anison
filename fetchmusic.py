@@ -132,10 +132,11 @@ class AnimeAngel:
                     'anime': 'id',  # useless
                     'animetheme': 'slug',  # sluglikeOP1
                     'animethemeentry': 'id',  # useless
+                    'audio': 'filename,size',
                     'studio': 'id',  # for looking up abbrs of company
-                    'video': 'filename,size',
+                    'video': 'id',  # useless
                 },
-                'include': (i := 'animethemes.animethemeentries.videos,studios'),
+                'include': (i := 'animethemes.animethemeentries.videos.audio,studios'),
                 'filter': {
                     'has-and': i,
                     'season': when.season,
@@ -148,9 +149,9 @@ class AnimeAngel:
             s = ''.join(self.book[str(s['id'])]['abbr'] for s in a['studios'])
             for t in a['animethemes']:
                 e = ''.join(re.compile('(.).(\d*)').match(t['slug']).groups())
-                v = [v for e in t['animethemeentries'] for v in e['videos']]
-                f = sorted(v, key=lambda v: v['size'])[0]['filename']
-                link = f'https://v.animethemes.moe/{f}.webm'
+                a = [v['audio'] for e in t['animethemeentries'] for v in e['videos']]
+                f = sorted(a, key=lambda a: a['size'])[0]['filename']
+                link = f'https://a.animethemes.moe/{f}.ogg'
                 Angel.pull(link, f'{self.when}{s}{e}', self.skip)
         if next := self.moe['links']['next']:
             self.moe = Angel.fetch(next)
