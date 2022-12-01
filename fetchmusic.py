@@ -63,7 +63,7 @@ class StudioBook(dict):
         else:
             with open('studio_book.json') as f:
                 for k, v in json.load(f).items():
-                    self[k] = v
+                    self[int(k)] = v
 
     def abbr(self):
         '''Short names are better on wearables
@@ -86,7 +86,7 @@ class StudioBook(dict):
         '''
         page = Angel.fetch(api)
         for studio in page['studios']:
-            self[str(studio['id'])] = {'slug': studio['slug']}
+            self[studio['id']] = {'slug': studio['slug']}
         if next := page['links']['next']:
             self.pull(next)
         return self
@@ -146,7 +146,7 @@ class AnimeAngel:
 
     def clone_songs_pull(self):
         for a in self.moe['anime']:
-            s = ''.join(self.book[str(s['id'])]['abbr'] for s in a['studios'])
+            s = ''.join(self.book[s['id']]['abbr'] for s in a['studios'])
             for t in a['animethemes']:
                 e = ''.join(re.compile('(.).(\d*)').match(t['slug']).groups())
                 a = [v['audio'] for e in t['animethemeentries'] for v in e['videos']]
