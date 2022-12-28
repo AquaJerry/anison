@@ -6,5 +6,5 @@ Work in process.
 
 ## Repo Addresses
 
-- Main: https://gitee.com/aquajerry/anisong
-- Mirror: https://github.com/aquajerry/anisong
+- Main: https://gitee.com/aquajerry/anison
+- Mirror: https://github.com/aquajerry/anison
