@@ -32,7 +32,7 @@ class Angel:
             return  # download incomplete
         if sames:
             # solve name conflicts
-            sames += [f'/tmp/{name}']
+            sames += f'/tmp/{name}',
             mds = [''.join(chr(55+ord(c)) if c.isdigit() else c for c in
                            os.popen(f'md5sum {s}').read()) for s in sames]
             for i in range(2):  # conflict rate: 1/256
@@ -161,9 +161,9 @@ class AnimeAngel:
         params = []
         for k, v in config.items():
             if type(v) is str:
-                params += [f'{k}={v}']
+                params += f'{k}={v}',
             else:
-                params += [f'{k}[{s}]={w}' for s, w in v.items()]
+                params += (f'{k}[{s}]={w}' for s, w in v.items())
         self.moe = Angel.fetch(f'{Angel.api_head}{endpoint}'
                      f"{'?' if params else ''}{'&'.join(params)}")
         return self
