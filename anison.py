@@ -130,7 +130,7 @@ class AnimeAngel:
             self.pull('anime', {
                 'fields': {
                     'anime': 'id',  # useless
-                    'animetheme': 'slug',  # sluglikeOP1
+                    'animetheme': 'sequence,type',  # like'1,OP'
                     'animethemeentry': 'id',  # useless
                     'audio': 'filename,size',
                     'studio': 'id',  # for looking up abbrs of company
@@ -148,7 +148,7 @@ class AnimeAngel:
         for a in self.moe['anime']:
             s = ''.join(self.book[s['id']]['abbr'] for s in a['studios'])
             for t in a['animethemes']:
-                e = ''.join(re.compile('(.).(\d*)').match(t['slug']).groups())
+                e = f"{t['type'][0]}{t['sequence']or''}"
                 a = [v['audio'] for e in t['animethemeentries'] for v in e['videos']]
                 f = sorted(a, key=lambda a: a['size'])[0]['filename']
                 link = f'https://a.animethemes.moe/{f}.ogg'
