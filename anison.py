@@ -24,8 +24,7 @@ class Season:
     def __repr__(self):
         return f'{str(self.year)[-2:]}{1 + self.quarter}'
 class Song:
-    def __init__(self, since='', skip=0):
-        self.skip = skip
+    def __init__(self, since=''):
         self.last_curl_time = time.time()  # Obey API rate limit
         for when in Season(since):
             '''pull anime songs from animethemes.moe'''
@@ -56,6 +55,8 @@ class Song:
             s = ''.join(abbr(s['slug']) for s in a['studios'])
             for t in a['animethemes']:
                 name = f"{self.when}{s}{t['type'][0]}{t['sequence']or''}"
+                if sames := os.popen(f'ls {name}[.a-z]*').read().split():
+                    continue
                 a = [v['audio'] for e in t['animethemeentries'] for v in e['videos']]
                 f = sorted(a, key=lambda a: a['size'])[0]['filename']
                 # Download link as name.mp3
@@ -65,8 +66,6 @@ class Song:
                 # 631MUSO.mp3
                 # 631MUSOa.mp3
                 #        ^ The dot(.) and lowercase means no need to download
-                if (sames := os.popen(f'ls {name}[.a-z]*').read().split()) and self.skip:
-                    break
                 if self.curl(lambda: os.system(f'curl https://a.animethemes.moe/{f}.ogg|ffmpeg -i - -af loudnorm -b:a 64k -map_chapters -1 -map_metadata -1 -f mp3 /tmp/{name}')):
                     break  # download incomplete
                 if sames:
@@ -83,8 +82,7 @@ class Song:
                     os.system(f'mv /tmp/{name} {name}.mp3')  # save
         if next := moe['links']['next']: self.pgdn(next)
 if '__main__' == __name__:
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-n', action='store_true')
-    parser.add_argument('since', default='', nargs='?')
-    arg = parser.parse_args()
-    Song(arg.since, arg.n)
+    p = argparse.ArgumentParser()
+    p.add_argument('since', default='', nargs='?')
+    a = p.parse_args()
+    Song(a.since)
