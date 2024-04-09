@@ -25,7 +25,8 @@ class Season:
     def __repr__(self):
         return f'{str(self.year)[-2:]}{1 + self.quarter}'
 class Song:
-    def __init__(self, since=''):
+    def __init__(self, since='', skip=0):
+        self.skip = skip
         self.last_curl_time = time.time()  # Obey API rate limit
         for when in Season(since):
             '''pull anison from animethemes.moe'''
@@ -61,7 +62,7 @@ class Song:
                 # 631MUSO.mp3
                 # 631MUSOa.mp3
                 #        ^ The dot(.) and lowercase means no need to download
-                if sames := os.popen(f'ls {name}[.a-z]*').read().split():
+                if (sames := os.popen(f'ls {name}[.a-z]*').read().split()) and self.skip:
                     continue  # skip existing song
                 a = [v['audio'] for e in t['animethemeentries'] for v in e['videos']]
                 f = sorted(a, key=lambda a: a['size'])[0]['filename']
@@ -82,6 +83,7 @@ class Song:
         if next := moe['links']['next']: self.pgdn(next)
 if '__main__' == __name__:
     p = argparse.ArgumentParser()
+    p.add_argument('-n', action='store_true')
     p.add_argument('since', default='', nargs='?')
     a = p.parse_args()
-    Song(a.since)
+    Song(a.since, a.n)
