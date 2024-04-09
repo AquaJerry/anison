@@ -8,7 +8,6 @@ import time
 
 class Angel:
     '''Fetcher'''
-    api_head = 'https://api.animethemes.moe/'
     last_fetch_time = time.time()  # Obey API rate limit
 
     def fetch(api):
@@ -97,7 +96,7 @@ class AnimeAngel:
             # Use this to get animes on air in some year
             self.when = when
             include = 'animethemes.animethemeentries.videos.audio,studios'
-            self.moe = Angel.fetch(f'{Angel.api_head}anime'
+            self.moe = Angel.fetch('https://api.animethemes.moe/anime'
                 '?fields[anime]=id'  # useless
                 '&fields[animetheme]=sequence,type'  # like'1,OP'
                 '&fields[animethemeentry]=id'  # useless
