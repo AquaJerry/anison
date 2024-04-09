@@ -50,48 +50,6 @@ class Angel:
         Angel.last_fetch_time = time.time()
 
 
-class StudioBook(dict):
-    '''Look up its instance to get info about a company'''
-
-    def __init__(self):
-        '''Get a dict of companies who make animes
-        '''
-        if os.system('[ -s studio_book.json ]'):  # if the book does not exist
-            api = 'studio?fields[studio]=id,slug'
-            with open('studio_book.json', 'w') as f:
-                json.dump(self.pull(Angel.api_head + api).abbr(), f)
-        else:
-            with open('studio_book.json') as f:
-                for k, v in json.load(f).items():
-                    self[int(k)] = v
-
-    def abbr(self):
-        '''Short names are better on wearables
-        '''
-        pres = 'production', 'studio'
-        for studio in self.values():
-            full = studio['slug'].replace('_', '')  # abbr is alnum
-            abbr = full[:3]
-            if full.startswith(pres):
-                pattern = f'({"|".join(pres)})' r'(?P<abbr>\w{,3})'
-                abbr = re.compile(pattern).match(full).group('abbr')
-            if 3 > (l := len(abbr)):
-                abbr = f'{full[:3-l]}{abbr}'  # each abbr lens 3
-            studio['abbr'] = abbr.upper()   # upper is more readable
-        return self
-
-    def pull(self, api):
-        '''Fetch info about anime companies page by page.
-        This will fetch all companies online.
-        '''
-        page = Angel.fetch(api)
-        for studio in page['studios']:
-            self[studio['id']] = {'slug': studio['slug']}
-        if next := page['links']['next']:
-            self.pull(next)
-        return self
-
-
 class AnimeSeason:
     Season = 'Winter', 'Spring', 'Summer', 'Fall'
 
@@ -119,7 +77,18 @@ class AnimeSeason:
 
 
 class AnimeAngel:
-    book = StudioBook()
+    def abbr_studio(self, slug):
+        '''Short names are better on wearables
+        '''
+        pres = 'production', 'studio'
+        full = slug.replace('_', '')  # abbr is alnum
+        abbr = full[:3]
+        if full.startswith(pres):
+            pattern = f'({"|".join(pres)})' r'(?P<abbr>\w{,3})'
+            abbr = re.compile(pattern).match(full).group('abbr')
+        if 3 > (l := len(abbr)):
+            abbr = f'{full[:3-l]}{abbr}'  # each abbr lens 3
+        return abbr.upper()   # upper is more readable
 
     def clone_songs(self, since='', skip=0):
         self.skip = skip
@@ -133,7 +102,7 @@ class AnimeAngel:
                     'animetheme': 'sequence,type',  # like'1,OP'
                     'animethemeentry': 'id',  # useless
                     'audio': 'filename,size',
-                    'studio': 'id',  # for looking up abbrs of company
+                    'studio': 'slug',
                     'video': 'id',  # useless
                 },
                 'include': (i := 'animethemes.animethemeentries.videos.audio,studios'),
@@ -146,7 +115,7 @@ class AnimeAngel:
 
     def clone_songs_pull(self):
         for a in self.moe['anime']:
-            s = ''.join(self.book[s['id']]['abbr'] for s in a['studios'])
+            s = ''.join(self.abbr_studio(s['slug']) for s in a['studios'])
             for t in a['animethemes']:
                 e = f"{t['type'][0]}{t['sequence']or''}"
                 a = [v['audio'] for e in t['animethemeentries'] for v in e['videos']]
