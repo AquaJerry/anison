@@ -96,22 +96,20 @@ class AnimeAngel:
             '''pull anime songs from animethemes.moe'''
             # Use this to get animes on air in some year
             self.when = when
-            self.pull('anime', {
-                'fields': {
-                    'anime': 'id',  # useless
-                    'animetheme': 'sequence,type',  # like'1,OP'
-                    'animethemeentry': 'id',  # useless
-                    'audio': 'filename,size',
-                    'studio': 'slug',
-                    'video': 'id',  # useless
-                },
-                'include': (i := 'animethemes.animethemeentries.videos.audio,studios'),
-                'filter': {
-                    'has-and': i,
-                    'season': when.season,
-                    'year': when.year,
-                },
-            }).clone_songs_pull()
+            include = 'animethemes.animethemeentries.videos.audio,studios'
+            self.moe = Angel.fetch(f'{Angel.api_head}anime'
+                '?fields[anime]=id'  # useless
+                '&fields[animetheme]=sequence,type'  # like'1,OP'
+                '&fields[animethemeentry]=id'  # useless
+                '&fields[audio]=filename,size'
+                '&fields[studio]=slug'
+                '&fields[video]=id'  # useless
+                f"&filter[has-and]={include}"
+                f'&filter[season]={when.season}'
+                f'&filter[year]={when.year}'
+                f'&include={include}'
+                )
+            self.clone_songs_pull()
 
     def clone_songs_pull(self):
         for a in self.moe['anime']:
@@ -125,17 +123,6 @@ class AnimeAngel:
         if next := self.moe['links']['next']:
             self.moe = Angel.fetch(next)
             self.clone_songs_pull()
-
-    def pull(self, endpoint, config={}):
-        params = []
-        for k, v in config.items():
-            if type(v) is str:
-                params += f'{k}={v}',
-            else:
-                params += (f'{k}[{s}]={w}' for s, w in v.items())
-        self.moe = Angel.fetch(f'{Angel.api_head}{endpoint}'
-                     f"{'?' if params else ''}{'&'.join(params)}")
-        return self
 
 
 if '__main__' == __name__:
