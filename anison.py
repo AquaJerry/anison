@@ -18,6 +18,7 @@ p = argparse.ArgumentParser()
 p.add_argument('since', default='631', nargs='?')  # what season to begin
 a = p.parse_args()
 when = int(a.since[2]) - 1 + 4 * (int(a.since[:2]) + (-63, 37)[63 > int(a.since[:2])])  # what season now
+os.system('touch /tmp/a')  # see: if themes updated remote
 while 1:
     girl, moe = {}, {'links': {'next': 'https://api.animethemes.moe/anime'
         '?fields[anime]=id'  # useless
@@ -36,10 +37,10 @@ while 1:
             s = ''.join(abbr(s['slug']) for s in a['studios'])
             for t in a['animethemes']:
                 if sames := same(name := f"{str(1963+when//4)[-2:]}{1+when%4}{s}{t['type'][0]}{t['sequence']or''}"):
-                    girl.setdefault(name, [len(sames)]).append(t)  # do later
+                    girl.setdefault(name, []).append(t)  # do later
                 else: os.system(f'{mp3(name, t)}&&mv /tmp/{name} {name}.mp3')  # save if complete
-    for name, (len_sames, *themes) in girl.items():
-        if len_sames < len(themes):  # if named themes updated remote
+    for name, themes in girl.items():
+        if len(themes) > int(os.popen(f'find ! -newer /tmp/a -name {name}[.a-z]*|wc -l').read()):  # if themes updated remote
             for theme in themes:  # tell from mds, like'631MUSEa.mp3,631MUSEb.mp3'
                 os.system(mp3(name, theme))  # cache /tmp/$name
                 sames = *same(name), f'/tmp/{name}'  # must re-eval sames each time
