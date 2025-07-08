@@ -17,7 +17,7 @@ same = lambda name: os.popen(f'ls {name}[.a-z]*').read().split()
 p = argparse.ArgumentParser()
 p.add_argument('since', default='631', nargs='?')  # what season to begin
 a = p.parse_args()
-season_arg, year = int(a.since[2]) - 1, (y := int(a.since[:2])) + (1899, 1999)[63 > y]  # season 0: winter, 1: spring, 2: summer, 3: fall
+season, year = int(a.since[2]) - 1, (y := int(a.since[:2])) + (1899, 1999)[63 > y]  # season 0: winter, 1: spring, 2: summer, 3: fall
 newest_date = os.popen('date').read()  # see: if themes updated remote
 while moe := json.load(os.popen("sleep 1;curl -g 'https://api.animethemes.moe/"  # sleep to obey rate limit
         f'animeyear/{str(year := 1 + year)}'
@@ -29,7 +29,7 @@ while moe := json.load(os.popen("sleep 1;curl -g 'https://api.animethemes.moe/" 
         '&fields[video]=id'  # useless
         '&include=animethemes.animethemeentries.videos.audio,studios'
         "'")):  # Use this to get anison on air in some year
-    for season in range(season_arg, 4):
+    for season in range(season, 4):
         girl = {}
         for a in moe.get(('winter', 'spring', 'summer', 'fall')[season], ()):
             s = ''.join(abbr(s['slug']) for s in a['studios'])
@@ -47,4 +47,4 @@ while moe := json.load(os.popen("sleep 1;curl -g 'https://api.animethemes.moe/" 
                         if len(sames) == len({m[:1+i] for m in mds}):  # mds='a,b'or'aa,ab'
                             for j, s in enumerate(sames): os.system(f'mv {s} {name}{mds[j][:1+i]}.mp3')
                             break
-    season_arg = 0  # next year
+    season = 0  # next year
