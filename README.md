@@ -23,13 +23,13 @@ Once placed, your system will update the anison by itself.
 
 ## Change the Anison Folder
 
-Anison is saved to your __Home folder__ by default, in a folder called `animethemes-audios`.
+Mostly you don't need to change anything. If you are on Android, anison is saved to __Internal storage__ by default, in a folder called `animethemes-audios`.
 
-If you want to save anison somewhere else (like an external drive), you can connect the new folder to this location through your __File Manager__:
+But if you want to save anison somewhere else (like an external drive), you can connect yours to that folder through your __File Manager__:
 
 1. Go to the folder where you want to keep your music.
 2. __Right‑click__ that folder and choose __“Create Link”__ or __“Make Link”__.
-3. Move that link into your Home folder and rename it to: `animethemes-audios`.
+3. Move that link into `/mnt/shared` and rename it to: `animethemes-audios`.
 
 This acts like a __shortcut__, so the updater finds your anison without knowing exactly where it is saved.
 

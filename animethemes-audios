@@ -1,7 +1,7 @@
 #!/bin/python3
 import datetime,json,os,sqlite3,urllib.request
-os.makedirs(os.path.expanduser('~/animethemes-audios'),exist_ok=1)
-os.chdir(os.path.expanduser('~/animethemes-audios'))
+os.makedirs('/mnt/shared/animethemes-audios',exist_ok=1)
+os.chdir('/mnt/shared/animethemes-audios')
 for n in*os.listdir(),'18921028'+12*'0':
     try:
         less_date=datetime.datetime.strptime(n,'%Y%m%d%H%M%S%f').strftime('%Y-%m-%dT%H:%M:%S.%f')
