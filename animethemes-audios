@@ -17,9 +17,7 @@ with sqlite3.connect(db)as c:
     p,=next(c.execute('SELECT path FROM audios WHERE id=:id',audio),[0])
     if p:
         os.unlink(p)
-        while 1:
-            try:os.rmdir(p:=os.path.dirname(p))
-            except:break
+        os.removedirs(os.path.dirname(p))
         c.execute('DELETE FROM audios WHERE id=:id',audio)
 os.makedirs(os.path.dirname(audio['path']),exist_ok=1)
 with open(audio['path'],'bw')as f:f.write(moe)
