@@ -2,10 +2,9 @@
 import datetime,json,os,sqlite3,urllib.request
 os.makedirs('/mnt/shared/animethemes-audios',exist_ok=1)
 os.chdir('/mnt/shared/animethemes-audios')
-for n in*os.listdir(),'18921028'+12*'0':
+for db in*os.listdir(),'18921028'+12*'0':
     try:
-        less_date=datetime.datetime.strptime(n,'%Y%m%d%H%M%S%f').strftime('%Y-%m-%dT%H:%M:%S.%f')
-        db=n
+        less_date=datetime.datetime.strptime(db,'%Y%m%d%H%M%S%f').strftime('%Y-%m-%dT%H:%M:%S.%f')
         break
     except:0
 with urllib.request.urlopen(urllib.request.Request(
