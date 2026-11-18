@@ -4,12 +4,18 @@ os.makedirs('/mnt/shared/animethemes-audios',exist_ok=1)
 os.chdir('/mnt/shared/animethemes-audios')
 for db in*os.listdir(),'18921028'+12*'0':
     try:
-        less_date=datetime.datetime.strptime(db,'%Y%m%d%H%M%S%f').strftime('%Y-%m-%dT%H:%M:%S.%f')
+        less_date=datetime.datetime.strptime(db+'Z','%Y%m%d%H%M%S%f%z')
         break
     except:0
-with urllib.request.urlopen(urllib.request.Request(
-    f'https://api.animethemes.moe/audio?fields[audio]=id,link,path,updated_at&filter[updated_at-gt]={less_date}&page[size]=1&sort=updated_at'
-    ,headers={'User-Agent':'curl'}))as r:audio,=json.load(r)['audios']
+with sqlite3.connect(db)as c:
+    c.execute('CREATE TABLE IF NOT EXISTS tmp(k UNIQUE,v)')
+    id_not_in,=next(c.execute("SELECT v FROM tmp WHERE k='id_not_in'"),' ')
+with urllib.request.urlopen(urllib.request.Request('https://graphql.animethemes.moe',data=
+    '{"query":"{audioPagination(first:1,sort:UPDATED_AT,where:{AND:[{column:ID,operator:NOT_IN,value:['
+    f'{id_not_in}'']},{column:UPDATED_AT,operator:GT,value:'
+    f'{less_date.timestamp()}''}]}){data{id link path updatedAt(format:\\"Y-m-d H:i:s.uP\\")}}}"}'
+    .encode(),headers={'Content-Type':'application/json','User-Agent':'curl'}))as r:
+    audio,=json.load(r)['data']['audioPagination']['data']
 with urllib.request.urlopen(audio['link'])as r:moe=r.read()
 with sqlite3.connect(db)as c:
     c.execute('CREATE TABLE IF NOT EXISTS audios(id UNIQUE,path)')
@@ -21,8 +27,10 @@ with sqlite3.connect(db)as c:
 os.makedirs(os.path.dirname(audio['path']),exist_ok=1)
 with open(audio['path'],'bw')as f:f.write(moe)
 with sqlite3.connect(db)as c:c.execute('INSERT INTO audios VALUES(:id,:path)',audio)
-more_date=datetime.datetime.fromisoformat(audio['updated_at'])
-os.replace(db,more_date.strftime('%Y%m%d%H%M%S%f'))
+more_date=datetime.datetime.fromisoformat(audio['updatedAt'])
+dc=more_date.strftime('%Y%m%d%H%M%S%f')
+with sqlite3.connect(db)as c:c.execute(f"REPLACE INTO tmp VALUES('id_not_in','{id_not_in*(db[:14]==dc[:14])} '||:id)",audio)
+os.replace(db,dc)
 if(datetime.datetime.now(datetime.UTC)-more_date).days>7:
     if'dai'in __file__:os.rename(__file__,__file__.replace('dai','hour'))
 else:
